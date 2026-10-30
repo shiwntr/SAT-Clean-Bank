@@ -1,0 +1,115 @@
+.scb-hidden {
+    display: none !important;
+}
+
+.scb-disable-interactions {
+    pointer-events: none !important;
+}
+
+.question-info {
+  scrollbar-gutter: stable !important;
+}
+
+/*answer choices*/
+
+.scb-choice {
+    height: 40px;
+}
+
+.scb-choice + .scb-choice {
+    margin-top: 10px;
+}
+
+.scb-choice-button {
+    width: 100%;
+    height: 100%;
+    background: var(--scb-white);
+    border: 2px solid var(--scb-gray);
+    border-radius: 10px;
+    text-align: left;
+    transition: background-color 0.15s, border-color 0.15s;
+}
+
+.scb-choice-button:hover {
+    background: var(--scb-lighter-gray);
+    border-color: var(--scb-black);
+}
+
+.scb-choice-button:active {
+    background: var(--scb-blue-tint2);
+    border-color: var(--scb-blue);
+}
+
+.scb-choice-selected {
+    background-color: var(--scb-blue-tint2);
+    border-color: var(--scb-blue);
+}
+
+.scb-choice-selected:hover {
+    background-color: var(--scb-blue-tint1);
+    border-color: var(--scb-blue-shade1);
+}
+
+.scb-choice-correct {
+    background-color: var(--scb-green-tint1);
+    border-color: var(--scb-green);
+}
+
+.scb-choice-incorrect {
+    background-color: var(--scb-red-tint1);
+    border-color: var(--scb-red);
+}
+
+/*check and reset section*/
+
+.scb-choice + .scb-check-and-reset {
+    margin-top: 15px;
+}
+
+.scb-check-and-reset {
+    height: 40px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.scb-check-button {
+    width: 100px;
+    height: 100%;
+    color: var(--scb-white);
+    background: var(--scb-blue);
+    border-radius: 10px;
+    border: 0px;
+    transition: background-color 0.15s
+}
+
+.scb-check-button:hover {
+    background: var(--scb-blue-shade1);
+}
+
+.scb-check-button:active {
+    background: var(--scb-blue-shade2);
+}
+
+.scb-reset-button {
+    background: transparent;
+    border: 0px;
+    align-items: center;
+    text-align: center;
+    color: var(--scb-light-gray);
+    transition: color 0.15s;
+}
+
+.scb-reset-button:hover {
+    color: var(--scb-gray);
+}
+
+/*rationale*/
+
+.scb-check-and-reset + .scb-rationale {
+    margin-top: 15px;
+}
+
+.scb-rationale {
+    width: 100%;
+}

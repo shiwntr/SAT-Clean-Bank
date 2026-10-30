@@ -1,0 +1,21 @@
+{
+  "manifest_version": 3,
+  "name": "SAT Clean Bank",
+  "version": "1.0.0",
+  "description": "Makes collegeboard's question bank better.",
+  "action": {"default_popup": "popup/popup.html"},
+  "content_scripts": [
+    {
+      "matches": ["https://satsuiteeducatorquestionbank.collegeboard.org/*"],
+      "js": ["main.js"],
+      "css": ["colors.css", "style.css"]
+    }
+  ],
+  "permissions": ["storage"],
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}
