@@ -1,10 +1,3 @@
-// TODO:
-// make better quesion id getter
-// make animations?
-// make fullscreen?
-
-
-
 (() => {
   const FONTS = {
     default: null,
@@ -15,6 +8,7 @@
   const store = { questions: {}, font: "default" };
   const questionState = { id: null, selected: null, solved: false, correctAnswer: null, wrong: new Set() };
   const choiceDataCache = new Map();
+  let lastSaved = "";
   let busy = false;
   let scheduleTimer = null;
 
@@ -76,14 +70,14 @@
   });
 
   function saveQuestions() {
+    if (!questionState.id) return;
     store.questions[questionState.id] = {
       wrong: Array.from(questionState.wrong),
       solved: questionState.solved,
       ts: Date.now()
-    }
-    chrome.storage.local.set({
-      scb_questions: store.questions
-    });
+    };
+    lastSaved = JSON.stringify(store.questions);
+    chrome.storage.local.set({ scb_questions: store.questions });
   }
 
   // deal with popup/modal
@@ -154,21 +148,20 @@
     if (questionContent) hideElement(questionContent.querySelector(".text"));
     hideElements(modal.footer.querySelectorAll(".cb-checkbox"));
 
+    if (!modal.footer.querySelector(".scb-next-and-back")) {
+      const nextButton = modal.footer.querySelector(".cb-align-right .cb-btn");
+      const backButton = modal.footer.querySelector(".left-actions .cb-btn");
+      if (nextButton && backButton) {
+        const nextAndBackContainer = document.createElement("div");
+        nextAndBackContainer.classList.add("scb-next-and-back");
+        nextAndBackContainer.append(backButton, nextButton);
+        modal.footer.append(nextAndBackContainer);
+        hideElement(modal.footer.querySelector(".cb-align-right"));
+        hideElement(modal.footer.querySelector(".left-actions"));
+      }
+    }
+
     hideElement(modal.footer.querySelector(".pdf-btn")); // hide pdf button
-
-    // next and back buttons
-
-    const nextAndBackContainer = document.createElement("div");
-    nextAndBackContainer.classList.add("scb-next-and-back");
-    const nextButton = modal.footer.querySelector(".cb-align-right")?.querySelector(".cb-btn");
-    const backButton = modal.footer.querySelector(".left-actions")?.querySelector(".cb-btn");
-
-    nextAndBackContainer.append(backButton, nextButton);
-
-    modal.footer.append(nextAndBackContainer)
-
-    hideElement(modal.footer.querySelector(".cb-align-right"))
-    hideElement(modal.footer.querySelector(".left-actions"))
   }
 
   // answer choices
@@ -248,8 +241,8 @@
   async function generateAnswerChoiceUi(modal, choiceData) {
     if (!modal.content) return;
     modal.content
-      .querySelectorAll(".scb-choice-button, .scb-check-and-reset, .scb-rationale, .scb-question")
-      .forEach((el) => el.remove());
+      .querySelectorAll(".scb-question, .scb-choice-button, .scb-check-and-reset, .scb-rationale, .scb-question")
+      .forEach((element) => element.remove());
 
     hideElement(modal.content.querySelector(".answer-choices"));
 
@@ -258,8 +251,8 @@
     // quesiton
 
     const question = document.createElement("h5")
-
     question.textContent = choiceData.question
+    question.classList.add("scb-question")
     container.append(question)
 
     // choices
@@ -411,6 +404,16 @@
     if (changes.scb_font) {
       store.font = changes.scb_font.newValue
       applyFont();
+    }
+
+    if (changes.scb_questions) {
+      const incoming = changes.scb_questions.newValue ?? {};
+      const incomingJson = JSON.stringify(incoming);
+      if (incomingJson === lastSaved) return;
+      store.questions = incoming;
+      lastSaved = incomingJson;
+      questionState.id = null;
+      schedule();
     }
   });
 
