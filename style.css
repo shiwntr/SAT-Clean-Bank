@@ -6,21 +6,43 @@
     pointer-events: none !important;
 }
 
-.question-info {
-    scrollbar-gutter: stable !important;
+.scb-remove-gap {
+    gap: 0px !important;
+}
+
+.secondary-text {
+    color: var(--scb-gray) !important;
+}
+
+/*heading*/
+
+.scb-modal-heading {
+    display: flex;
+    align-items: baseline;
+    align-self: center;
+    gap: 10px;
+}
+
+.scb-modal-heading h4,
+.scb-modal-heading p {
+    margin: 0 !important;
+    line-height: 1.2;
 }
 
 /*answer choices*/
 
-.scb-choice {
-    height: auto;
+.question-info {
+    scrollbar-gutter: stable !important;
 }
 
-.scb-choice + .scb-choice {
+.scb-choice-button + .scb-choice-button {
     margin-top: 10px;
 }
 
 .scb-choice-button {
+    display: flex;
+    align-items: center;
+    gap: 12px;
     width: 100%;
     height: auto;
     min-height: 40px;
@@ -60,13 +82,55 @@
 }
 
 .scb-choice-incorrect {
+    background-color: var(--scb-red-tint3);
+    border-color: var(--scb-red);
+}
+
+.scb-choice-selected .scb-choice-letter {
+    background-color: var(--scb-blue);
+    border-color: var(--scb-blue);
+    color: var(--scb-white);
+}
+
+.scb-choice-letter {
+    flex: 0 0 auto;
+    width: 26px;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid currentColor;
+    border-radius: 50%;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1;
+    transition: background-color 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.scb-choice-correct .scb-choice-letter {
+    background-color: var(--scb-green);
+    border-color: var(--scb-green);
+    color: var(--scb-white);
+}
+
+.scb-choice-incorrect .scb-choice-letter {
     background-color: var(--scb-red-tint1);
     border-color: var(--scb-red);
+    color: var(--scb-white);
+}
+
+.scb-choice-text {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.scb-choice-incorrect .scb-choice-text {
+    color: var(--scb-gray);
 }
 
 /*check and reset section*/
 
-.scb-choice + .scb-check-and-reset {
+.scb-choice-button + .scb-check-and-reset {
     margin-top: 15px;
 }
 
@@ -122,16 +186,27 @@
     white-space: pre-line;
 }
 
+/*next and back buttons*/
+.scb-next-and-back {
+    display: flex;
+    grid-column: 1 / -1;
+    justify-self: end;
+    align-items: center;
+    gap: 10px;
+}
+
+/*fonts*/
+
 .scb-choice-button,
 .scb-check-button,
 .scb-reset-button,
 .scb-rationale,
 .scb-question {
-  font-family: var(--scb-font, inherit) !important;
+    font-family: var(--scb-font, inherit) !important;
 }
 
 #question-modal h4,
 #question-modal h5,
 #question-modal p {
-  font-family: var(--scb-font, inherit) !important;
+    font-family: var(--scb-font, inherit) !important;
 }

@@ -1,11 +1,7 @@
 // TODO:
-// auto scale choice boxes
-// make choices have circles around them
-// make modal.header better
 // make better quesion id getter
 // make animations?
 // make fullscreen?
-// remove pdf button
 
 
 
@@ -109,23 +105,70 @@
 
   function getQuestionId(modal) {
     if (!modal.header) return null;
-    return modal.header.textContent.replace("Question ID: ", "").replace("Close", "").trim();
+    const match = modal.header.textContent.match(/Question ID:\s*([A-Za-z0-9-]+)/i);
+    return match ? match[1].replace(/close/i, "").trim() : null;
+  }
+
+  function generateHeading(modal) {
+    const questionContent = modal.content.querySelector(".question-content");
+
+    hideElement(modal.header.querySelector("h4")); // question id text
+
+    modal.header.querySelectorAll(".scb-modal-heading").forEach((element) => { element.remove(); });
+
+    questionContent.querySelector(".text")?.remove(); // subject text
+
+    const heading = document.createElement("div");
+    heading.classList.add("scb-modal-heading");
+
+    const difficulty = document.createElement("h4");
+    difficulty.textContent = questionContent.querySelector("h5").textContent;
+
+    const questionId = document.createElement("p");
+    questionId.textContent = "id: " + questionState.id;
+    questionId.classList.add("secondary-text");
+
+    heading.append(difficulty, questionId);
+    modal.header.prepend(heading);
+
+    hideElement(modal.content.querySelector(".question-detail-info")); // the big table
   }
 
   function cleanUpQuestionModal(modal) {
     if (!modal.header || !modal.content || !modal.footer) return;
 
+    modal.footer.classList.add("scb-remove-gap")
+
     const questionContent = modal.content.querySelector(".question-content");
     const answerContent = modal.content.querySelector(".answer-content");
 
-    hideElement(answerContent.querySelector("h5"))
+    generateHeading(modal);
 
-    questionContent.querySelector(".question").remove()
-    questionContent.querySelector(".prompt").classList.remove("cb-margin-bottom-16")
+    hideElement(questionContent.querySelector("h5")); // difficulty
+    questionContent.querySelector(".prompt")?.classList.remove("cb-margin-bottom-16"); // question text
+    hideElement(questionContent.querySelector(".question")); // actual question
 
-    hideElement(modal.content.querySelector(".question-detail-info"));
+    hideElement(answerContent.querySelector("h5")); // "answer" text
+
+    // rationale toggle checkboxes
     if (questionContent) hideElement(questionContent.querySelector(".text"));
     hideElements(modal.footer.querySelectorAll(".cb-checkbox"));
+
+    hideElement(modal.footer.querySelector(".pdf-btn")); // hide pdf button
+
+    // next and back buttons
+
+    const nextAndBackContainer = document.createElement("div");
+    nextAndBackContainer.classList.add("scb-next-and-back");
+    const nextButton = modal.footer.querySelector(".cb-align-right")?.querySelector(".cb-btn");
+    const backButton = modal.footer.querySelector(".left-actions")?.querySelector(".cb-btn");
+
+    nextAndBackContainer.append(backButton, nextButton);
+
+    modal.footer.append(nextAndBackContainer)
+
+    hideElement(modal.footer.querySelector(".cb-align-right"))
+    hideElement(modal.footer.querySelector(".left-actions"))
   }
 
   // answer choices
@@ -180,54 +223,67 @@
     const letters = ["A", "B", "C", "D"];
     let letter = letters[index];
     if (!letter) letter = "?"
-    const mainContainer = document.createElement("div");
-    mainContainer.classList.add("scb-choice");
-    mainContainer.answerChoice = letter
+
     const button = document.createElement("button");
-    button.textContent = letters[index] + ". " + text;
     button.classList.add("scb-choice-button");
+    button.dataset.answerChoice = letter
+    const badge = document.createElement("span");
+    badge.classList.add("scb-choice-letter");
+    badge.textContent = letter;
+    const label = document.createElement("span");
+    label.classList.add("scb-choice-text");
+    label.textContent = text;
+
+    button.append(badge, label)
+
     if (questionState.wrong.has(letter)) {
       button.classList.add("scb-choice-incorrect", "scb-disable-interactions");
     } else if (questionState.solved && letter === questionState.correctAnswer) {
       button.classList.add("scb-choice-correct");
     }
-    mainContainer.append(button);
-    return mainContainer;
+
+    return button;
   }
 
   async function generateAnswerChoiceUi(modal, choiceData) {
     if (!modal.content) return;
     modal.content
-      .querySelectorAll(".scb-choice, .scb-check-and-reset, .scb-rationale, .scb-question")
+      .querySelectorAll(".scb-choice-button, .scb-check-and-reset, .scb-rationale, .scb-question")
       .forEach((el) => el.remove());
-    modal.content.querySelector(".answer-choices").classList.add("scb-hidden");
+
+    hideElement(modal.content.querySelector(".answer-choices"));
+
     const container = modal.content.querySelector(".answer-content");
+
+    // quesiton
 
     const question = document.createElement("h5")
 
     question.textContent = choiceData.question
     container.append(question)
 
-    const answerChoiceElements = [];
+    // choices
+
+    const answerChoiceButtonss = [];
     choiceData.choices.forEach((text, index) => {
       const element = generateAnswerChoiceElement(index, text);
-      answerChoiceElements.push(element);
+      answerChoiceButtonss.push(element);
       container.append(element);
     });
-
-    answerChoiceElements.forEach((element) => {
-      const button = element.querySelector(".scb-choice-button");
+    answerChoiceButtonss.forEach((button) => {
       button.addEventListener("click", () => {
         if (questionState.solved) return;
 
-        answerChoiceElements.forEach((elemen) => {
-          elemen.querySelector(".scb-choice-button").classList.remove("scb-choice-selected");
+        answerChoiceButtonss.forEach((btn) => {
+          btn.classList.remove("scb-choice-selected");
         });
 
         button.classList.add("scb-choice-selected");
-        questionState.selected = element;
+        questionState.selected = button;
       });
     });
+
+    // check and reset
 
     const checkAndResetContainer = document.createElement("div");
     checkAndResetContainer.classList.add("scb-check-and-reset");
@@ -235,12 +291,13 @@
     const checkbutton = document.createElement("button");
     checkbutton.textContent = "Check";
     checkbutton.classList.add("scb-check-button");
-
     const resetButton = document.createElement("button");
     resetButton.textContent = "Reset question";
     resetButton.classList.add("scb-reset-button");
 
     checkAndResetContainer.append(checkbutton, resetButton);
+
+    // rationale
 
     const rationaleContainer = document.createElement("div");
     rationaleContainer.classList.add("scb-rationale", "scb-hidden");
@@ -252,7 +309,7 @@
     correctAnswerRationale.textContent = choiceData.rationale.paragraphs[1];
     correctAnswerRationale.classList.add("scb-correct-answer-rationale");
     const incorrectAnswersRationale = document.createElement("p");
-    incorrectAnswersRationale.textContent  = choiceData.rationale.paragraphs[2].replace(/\s*(Choice\s+[A-D]\b)/g, "\n$1");
+    incorrectAnswersRationale.textContent  = choiceData.rationale.paragraphs[2].replace(/\s*(Choice\s+[A-D]\b)/g, "\n$1").trim();
     incorrectAnswersRationale.classList.add("scb-incorrect-answer-rationale");
 
     rationaleContainer.append(correctAnswer, correctAnswerRationale, incorrectAnswersRationale);
@@ -263,9 +320,8 @@
       if (questionState.solved) return;
       if (!questionState.selected) return;
 
-      const choice = questionState.selected.answerChoice;
-      const button = questionState.selected.querySelector(".scb-choice-button")
-      if (!button) return;
+      const button = questionState.selected;
+      const choice = button.dataset.answerChoice;
 
       if (choice !== choiceData.rationale.correctAnswer) {
         button.classList.remove("scb-choice-selected");
@@ -276,8 +332,8 @@
         checkbutton.classList.add("scb-disable-interactions");
         button.classList.remove("scb-choice-selected");
         button.classList.add("scb-choice-correct", "scb-disable-interactions");
-        answerChoiceElements.forEach((el) => {
-          el.querySelector(".scb-choice-button").classList.add("scb-disable-interactions");
+        answerChoiceButtonss.forEach((button) => {
+          button.classList.add("scb-disable-interactions");
         });
         rationaleContainer.classList.remove("scb-hidden");
         questionState.selected = null;
@@ -286,8 +342,8 @@
       saveQuestions();
     });
     resetButton.addEventListener("click", () => {
-      answerChoiceElements.forEach((elemen) => {
-        elemen.querySelector(".scb-choice-button").classList.remove("scb-disable-interactions", "scb-choice-correct", "scb-choice-incorrect", "scb-choice-selected");
+      answerChoiceButtonss.forEach((button) => {
+        button.classList.remove("scb-disable-interactions", "scb-choice-correct", "scb-choice-incorrect", "scb-choice-selected");
       });
       checkbutton.classList.remove("scb-disable-interactions");
       rationaleContainer.classList.add("scb-hidden");
@@ -300,8 +356,8 @@
     if (questionState.solved) {
       checkbutton.classList.add("scb-disable-interactions");
       rationaleContainer.classList.remove("scb-hidden");
-      answerChoiceElements.forEach((element) => {
-        element.querySelector(".scb-choice-button").classList.add("scb-disable-interactions");
+      answerChoiceButtonss.forEach((button) => {
+        button.classList.add("scb-disable-interactions");
       });
     }
   }
