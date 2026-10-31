@@ -7,13 +7,13 @@
 }
 
 .question-info {
-  scrollbar-gutter: stable !important;
+    scrollbar-gutter: stable !important;
 }
 
 /*answer choices*/
 
 .scb-choice {
-    height: 40px;
+    height: auto;
 }
 
 .scb-choice + .scb-choice {
@@ -22,21 +22,25 @@
 
 .scb-choice-button {
     width: 100%;
-    height: 100%;
-    background: var(--scb-white);
+    height: auto;
+    min-height: 40px;
+    padding: 8px 12px;
+    background-color: var(--scb-white);
     border: 2px solid var(--scb-gray);
     border-radius: 10px;
     text-align: left;
+    overflow-wrap: anywhere;
+    white-space: normal;
     transition: background-color 0.15s, border-color 0.15s;
 }
 
 .scb-choice-button:hover {
-    background: var(--scb-lighter-gray);
+    background-color: var(--scb-lighter-gray);
     border-color: var(--scb-black);
 }
 
 .scb-choice-button:active {
-    background: var(--scb-blue-tint2);
+    background-color: var(--scb-blue-tint2);
     border-color: var(--scb-blue);
 }
 
@@ -77,22 +81,22 @@
     width: 100px;
     height: 100%;
     color: var(--scb-white);
-    background: var(--scb-blue);
+    background-color: var(--scb-blue);
     border-radius: 10px;
     border: 0px;
     transition: background-color 0.15s
 }
 
 .scb-check-button:hover {
-    background: var(--scb-blue-shade1);
+    background-color: var(--scb-blue-shade1);
 }
 
 .scb-check-button:active {
-    background: var(--scb-blue-shade2);
+    background-color: var(--scb-blue-shade2);
 }
 
 .scb-reset-button {
-    background: transparent;
+    background-color: transparent;
     border: 0px;
     align-items: center;
     text-align: center;
@@ -112,4 +116,18 @@
 
 .scb-rationale {
     width: 100%;
+}
+
+.scb-choice-button,
+.scb-check-button,
+.scb-reset-button,
+.scb-rationale,
+.scb-question {
+  font-family: var(--scb-font, inherit) !important;
+}
+
+#question-modal h4,
+#question-modal h5,
+#question-modal p {
+  font-family: var(--scb-font, inherit) !important;
 }

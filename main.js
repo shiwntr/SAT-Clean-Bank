@@ -1,15 +1,22 @@
+// TODO:
+// auto scale choice boxes
+// make choices have circles around them
+// make modal.header better
+// make better quesion id getter
+// make animations?
+// make fullscreen?
+// remove pdf button
+
+
+
 (() => {
   const FONTS = {
     default: null,
-    georgia: 'Georgia, "Times New Roman", serif',
-    arial: 'Arial, Helvetica, sans-serif',
-    verdana: 'Verdana, Geneva, sans-serif',
-    system: 'system-ui, -apple-system, "Segoe UI", sans-serif',
-    mono: '"Courier New", Courier, monospace',
+    roboto: '"Roboto Flex", sans-serif',
+    arial: 'Arial, sans-serif',
   };
 
   const store = { questions: {}, font: "default" };
-
   const questionState = { id: null, selected: null, solved: false, correctAnswer: null, wrong: new Set() };
   const choiceDataCache = new Map();
   let busy = false;
@@ -54,11 +61,22 @@
     elements.forEach((element) => hideElement(element));
   }
 
+  function applyFont() {
+    const family = FONTS[store.font];
+    const root = document.documentElement;
+    if (family) {
+      root.style.setProperty("--scb-font", family);
+    } else {
+      root.style.removeProperty("--scb-font");
+    }
+  }
+
   // saved data
 
   const saveReady = chrome.storage.local.get(["scb_questions", "scb_font"]).then((data) => {
     store.questions = data.scb_questions || {};
     store.font = data.scb_font || "default";
+    applyFont();
   });
 
   function saveQuestions() {
@@ -72,7 +90,7 @@
     });
   }
 
-  // get question popup/modal element
+  // deal with popup/modal
 
   function findQuestionModal() {
     const root = document.getElementById("question-modal")
@@ -93,8 +111,6 @@
     if (!modal.header) return null;
     return modal.header.textContent.replace("Question ID: ", "").replace("Close", "").trim();
   }
-
-  // clean up question modal
 
   function cleanUpQuestionModal(modal) {
     if (!modal.header || !modal.content || !modal.footer) return;
@@ -334,6 +350,13 @@
     clearTimeout(scheduleTimer)
     scheduleTimer = setTimeout(mainLoop, 100);
   }
+
+  chrome.storage.local.onChanged.addListener((changes) => {
+    if (changes.scb_font) {
+      store.font = changes.scb_font.newValue
+      applyFont();
+    }
+  });
 
   new MutationObserver(schedule).observe(document.body, { childList: true, subtree: true, characterData: true });
   schedule()

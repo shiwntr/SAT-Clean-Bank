@@ -8,7 +8,13 @@
     {
       "matches": ["https://satsuiteeducatorquestionbank.collegeboard.org/*"],
       "js": ["main.js"],
-      "css": ["colors.css", "style.css"]
+      "css": ["shared/colors.css", "shared/fonts.css", "style.css"]
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["fonts/*"],
+      "matches": ["https://satsuiteeducatorquestionbank.collegeboard.org/*"]
     }
   ],
   "permissions": ["storage"],
