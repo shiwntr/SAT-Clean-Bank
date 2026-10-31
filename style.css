@@ -118,6 +118,10 @@
     width: 100%;
 }
 
+.scb-incorrect-answer-rationale {
+    white-space: pre-line;
+}
+
 .scb-choice-button,
 .scb-check-button,
 .scb-reset-button,

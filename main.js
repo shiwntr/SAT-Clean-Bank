@@ -252,7 +252,7 @@
     correctAnswerRationale.textContent = choiceData.rationale.paragraphs[1];
     correctAnswerRationale.classList.add("scb-correct-answer-rationale");
     const incorrectAnswersRationale = document.createElement("p");
-    incorrectAnswersRationale.innerHTML = choiceData.rationale.paragraphs[2].replaceAll(" Choice", "<br> Choice")
+    incorrectAnswersRationale.textContent  = choiceData.rationale.paragraphs[2].replace(/\s*(Choice\s+[A-D]\b)/g, "\n$1");
     incorrectAnswersRationale.classList.add("scb-incorrect-answer-rationale");
 
     rationaleContainer.append(correctAnswer, correctAnswerRationale, incorrectAnswersRationale);
