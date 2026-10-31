@@ -25,6 +25,5 @@ chrome://extensions
 
 ## Planned features
 + Question statistics
-+ Countdown to your testing day
 + Animations
 + Fullscreen

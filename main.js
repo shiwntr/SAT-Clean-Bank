@@ -258,8 +258,8 @@
     // choices
 
     const answerChoiceButtonss = [];
-    choiceData.choices.forEach((text, index) => {
-      const element = generateAnswerChoiceElement(index, text);
+    choiceData.choices.forEach((text, i) => {
+      const element = generateAnswerChoiceElement(i, text);
       answerChoiceButtonss.push(element);
       container.append(element);
     });
