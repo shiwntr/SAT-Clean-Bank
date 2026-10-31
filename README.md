@@ -14,7 +14,7 @@ git clone "https://github.com/shiwntr/SAT-Clean-Bank.git"
 
 #### 2. Go to chrome extensions.
 
-### [chrome://extensions](chrome://extensions)
+[chrome://extensions](chrome://extensions)
 
 #### 3. Enable developer mode if not enabled already.
 #### 4. Press load unpacked.
