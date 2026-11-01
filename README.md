@@ -24,6 +24,5 @@ chrome://extensions
 + Currently only supports Chrome
 
 ## Planned features
-+ Question statistics
 + Quickly view question state from table
 + Animations
