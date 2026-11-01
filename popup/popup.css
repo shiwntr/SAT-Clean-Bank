@@ -1,6 +1,10 @@
 @import url("../shared/colors.css");
 @import url("../shared/fonts.css");
 
+:root {
+    color-scheme: light;
+}
+
 * {
     box-sizing: border-box;
 }
@@ -349,6 +353,24 @@ button:active {
     position: relative;
     top: -0.05em;
     margin-bottom: 0px;
+}
+
+.calendar-anchor {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#calendar {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+    border: 0;
+    padding: 0;
+    color-scheme: light;
 }
 
 #change-date {

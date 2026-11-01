@@ -10,11 +10,6 @@
     gap: 0px !important;
 }
 
-.cb-modal-overlay {
-    transition: none !important;
-    animation: none !important;
-}
-
 .secondary-text {
     color: var(--scb-gray) !important;
 }
@@ -33,7 +28,20 @@
     transform: none !important;
     display: flex;
     flex-direction: column;
-    scrollbar-gutter: stable !important;
+}
+
+.cb-modal-overlay {
+    transition: none !important;
+    animation: none !important;
+}
+
+html.scb-no-scroll,
+html.scb-no-scroll body {
+    overflow: hidden !important;
+}
+
+.cb-modal-container {
+    scrollbar-gutter: auto !important;
 }
 
 /*heading*/
@@ -61,7 +69,7 @@
 
 .cb-dialog-header {
     padding: 8px 12px !important;
-    border-color: var(--scb-light-gray) !important;
+    border-color: #b2b2b2 !important;
 }
 
 #question-card {
@@ -71,7 +79,7 @@
 /*answer choices*/
 
 .question-info {
-    scrollbar-gutter: stable !important;
+    scrollbar-gutter: stable both-edges !important;
 }
 
 .scb-choice-button + .scb-choice-button {

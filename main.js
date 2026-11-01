@@ -11,6 +11,7 @@
   let lastSaved = "";
   let busy = false;
   let scheduleTimer = null;
+  let ignoreNextStorageChange = false;
 
   // helper funcs
 
@@ -76,7 +77,7 @@
       solved: questionState.solved,
       ts: Date.now()
     };
-    lastSaved = JSON.stringify(store.questions);
+    ignoreNextStorageChange = true;
     chrome.storage.local.set({ scb_questions: store.questions });
   }
 
@@ -131,6 +132,7 @@
   function cleanUpQuestionModal(modal) {
     if (!modal.header || !modal.content || !modal.footer) return;
 
+    document.documentElement.classList.add("scb-no-scroll");
     modal.root.classList.remove("scb-hidden");
     modal.content.classList.remove("scb-hidden");
 
@@ -407,11 +409,15 @@
 
   async function handleModalChange() {
     const modal = findQuestionModal();
-    if (!modal) return;
+    if (!modal) {
+      document.documentElement.classList.remove("scb-no-scroll");
+      return;
+    };
 
     const loading = isModalLoading(modal)
 
     if (loading && questionState.id == null) {
+      document.documentElement.classList.add("scb-no-scroll");
       modal.root.classList.add("scb-hidden")
     }
   }
@@ -428,11 +434,11 @@
     }
 
     if (changes.scb_questions) {
-      const incoming = changes.scb_questions.newValue ?? {};
-      const incomingJson = JSON.stringify(incoming);
-      if (incomingJson === lastSaved) return;
-      store.questions = incoming;
-      lastSaved = incomingJson;
+      if (ignoreNextStorageChange) {
+        ignoreNextStorageChange = false;
+        return;
+      }
+      store.questions = changes.scb_questions.newValue ?? {};
       questionState.id = null;
       schedule();
     }
