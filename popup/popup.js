@@ -4,11 +4,14 @@
 
   const store = { questions: {}, font: "default", date: new Date() };
 
-  const fontDropdown = document.getElementById("font-dropdown");
+  const views = document.getElementById("views");
+  const settings = document.getElementById("settings")
+  const content = document.getElementById("content")
 
   const stats = document.getElementById("stats")
   const questionsAnsweredElement = stats.querySelector(".questions-answered")
-  const questionStatsElement = stats.querySelector(".question-stats")
+  const firstAttemptElement = stats.querySelector(".first-attempt")
+  const questionStateBarElement = stats.querySelector(".question-stats")
 
   const countdown = document.getElementById("countdown");
   const dayElement = countdown.querySelector(".days");
@@ -25,6 +28,57 @@
   const importFile = document.getElementById("import-file");
   let resetTimer = null;
   let resetDataClicks = 0;
+
+  // settings
+
+  function showView(showSettings) {
+    const startHeight = views.offsetHeight;
+
+    // toggle visibility
+    settings.style.display = showSettings ? "block" : "none";
+    content.style.display = showSettings ? "none" : "block";
+    views.style.height = "auto";
+    const endHeight = views.offsetHeight;
+
+    const incoming = showSettings ? settings : content;
+    incoming.animate(
+      [
+        { opacity: 0 },
+        { opacity: 1 }
+      ],
+      {
+        duration: 500,
+        easing: "ease"
+      }
+    ); // opacity
+
+    if (startHeight === endHeight) {
+      views.style.height = "";
+      return;
+    }
+
+    // height
+    views.style.height = `${startHeight}px`;
+    void views.offsetHeight;
+    views.classList.add("animating");
+    void views.offsetHeight;
+    views.style.height = `${endHeight}px`;
+
+    // cleanup after transition
+    views.addEventListener("transitionend", function done(e) {
+      if (e.target !== views) return;
+      views.removeEventListener("transitionend", done);
+      views.classList.remove("animating");
+      views.style.height = "";
+    });
+  }
+  const settingsButton = document.getElementById("settings-btn");
+  let settingsOpen = false;
+  settingsButton.addEventListener("click", () => {
+    settingsOpen = !settingsOpen;
+    showView(settingsOpen);
+  });
+  const fontDropdown = document.getElementById("font-dropdown");
 
   // saved data
 
@@ -326,8 +380,9 @@
   // stats
 
   function getStats() {
-    const stats = { answered: 0, answeredFirst: 0, answeredMiddle: 0, answeredLast: 0, unsolved: 0 };
+    const stats = { total: 0, answered: 0, answeredFirst: 0, answeredMiddle: 0, answeredLast: 0, unsolved: 0 };
     Object.values(store.questions).forEach((question) => {
+      stats.total++;
       if (question.solved) {
         stats.answered++;
         const wrongCount = question.wrong?.length ?? 0;
@@ -351,6 +406,8 @@
     const statsData = getStats();
     questionsAnsweredCounter.set(statsData.answered);
 
+    firstAttemptCounter.set((statsData.answeredFirst / statsData.total) * 100);
+
     questionStateBar.setValue("First Attempt", statsData.answeredFirst);
     questionStateBar.setValue("Retried", statsData.answeredMiddle);
     questionStateBar.setValue("Last Attempt", statsData.answeredLast);
@@ -360,8 +417,9 @@
   // main loop
 
   const questionsAnsweredCounter = makeCounter(questionsAnsweredElement, 0);
+  const firstAttemptCounter = makeCounter(firstAttemptElement, 0);
   const questionStateBar = makeBar(
-    questionStatsElement,
+    questionStateBarElement,
     {
       "First Attempt": [0, "--scb-green"],
       "Retried": [0, "--scb-yellow"],
@@ -387,6 +445,7 @@
       "scb_font"
     );
 
+    showView(settingsOpen);
     updateStats();
     updateCountdown();
     updateDateLabel();
