@@ -72,6 +72,7 @@
       views.style.height = "";
     });
   }
+
   const settingsButton = document.getElementById("settings-btn");
   let settingsOpen = false;
   settingsButton.addEventListener("click", () => {
@@ -189,7 +190,13 @@
 
   // helper funcs
 
-  function makeDropdownMenu(container, name, optionNames, optionValues, value, saveValue) {
+  function keyFor(map, findValue) {
+    return map.find(([, value]) => value === findValue)?.[0] ?? map[0][0];
+  }
+
+  function makeDropdownMenu(container, name, options, value, saveValue) {
+    const entries = Object.entries(options);
+
     container.dataset.value = value;
 
     const nameText = document.createElement("p");
@@ -197,7 +204,7 @@
 
     const toggleButton = document.createElement("button");
     toggleButton.classList.add("dropdown-toggle");
-    toggleButton.textContent = optionNames[optionValues.indexOf(value)];
+    toggleButton.textContent = keyFor(entries, value);
 
     const dropdownMenu = document.createElement("div");
     dropdownMenu.classList.add("dropdown-menu");
@@ -211,20 +218,20 @@
     window.addEventListener("click", () => {
       toggleButton.classList.remove("dropdown-toggle-down");
       dropdownMenu.classList.remove("show");
-    })
+    });
 
     container.append(nameText, toggleButton, dropdownMenu);
 
-    optionNames.forEach((optionName, index) => {
+    entries.forEach(([label, optionValue], index) => {
       const option = document.createElement("button");
       option.classList.add("dropdown-item");
-      option.textContent = optionName;
-      if (index == optionNames.length - 1) option.classList.add("dropdown-last-item");
+      option.textContent = label;
+      if (index === entries.length - 1) option.classList.add("dropdown-last-item");
 
       option.addEventListener("click", () => {
-        toggleButton.textContent = option.textContent;
-        container.dataset.value = optionValues[index];
-        if (saveValue) chrome.storage.local.set({ [saveValue]: optionValues[index] });
+        toggleButton.textContent = label;
+        container.dataset.value = optionValue;
+        if (saveValue) chrome.storage.local.set({ [saveValue]: optionValue });
       });
 
       dropdownMenu.append(option);
@@ -439,8 +446,11 @@
     makeDropdownMenu(
       fontDropdown,
       "Font",
-      FONT_NAMES,
-      FONT_VALUES,
+      {
+        "Default": "default",
+        "Roboto": "roboto",
+        "Arial": "arial",
+      },
       store.font,
       "scb_font"
     );

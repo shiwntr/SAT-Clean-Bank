@@ -10,6 +10,11 @@
     gap: 0px !important;
 }
 
+.cb-modal-overlay {
+    transition: none !important;
+    animation: none !important;
+}
+
 .secondary-text {
     color: var(--scb-gray) !important;
 }

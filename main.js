@@ -131,9 +131,12 @@
   function cleanUpQuestionModal(modal) {
     if (!modal.header || !modal.content || !modal.footer) return;
 
+    modal.root.classList.remove("scb-hidden");
+    modal.content.classList.remove("scb-hidden");
+
     modal.root.querySelector(".cb-modal-container").classList.add("scb-fullscreen-modal")
 
-    modal.footer.classList.add("scb-remove-gap")
+    modal.footer.classList.add("scb-remove-gap");
 
     const questionContent = modal.content.querySelector(".question-content");
     const answerContent = modal.content.querySelector(".answer-content");
@@ -153,6 +156,8 @@
     if (!modal.footer.querySelector(".scb-next-and-back")) {
       const nextButton = modal.footer.querySelector(".cb-align-right .cb-btn");
       const backButton = modal.footer.querySelector(".left-actions .cb-btn");
+      nextButton.addEventListener("click", () => { modal.content.classList.add("scb-hidden") });
+      backButton.addEventListener("click", () => { modal.content.classList.add("scb-hidden") });
       if (nextButton && backButton) {
         const nextAndBackContainer = document.createElement("div");
         nextAndBackContainer.classList.add("scb-next-and-back");
@@ -194,6 +199,7 @@
     if (!checkbox.checked) checkbox.click();
     const div = await waitFor(() => modal.root.querySelector(".rationale"));
     const paragraphs = div ? [...div.querySelectorAll("p")].map((p) => p.textContent.trim()) : null;
+    if (!paragraphs) return null;
     const correctAnswer = paragraphs ? paragraphs[0].replace(/^Correct Answer:\s*/i, "").trim() : null;
     if (checkbox.checked) checkbox.click();
 
@@ -242,6 +248,7 @@
 
   async function generateAnswerChoiceUi(modal, choiceData) {
     if (!modal.content) return;
+
     modal.content
       .querySelectorAll(".scb-question, .scb-choice-button, .scb-check-and-reset, .scb-rationale, .scb-question")
       .forEach((element) => element.remove());
@@ -369,10 +376,11 @@
         questionState.id = null;
         return;
       }
-      if (isModalLoading(modal)) return;
 
       const id = getQuestionId(modal);
       if (!id || id === questionState.id) return;
+
+      if (isModalLoading(modal)) return;
 
       saveQuestions()
 
@@ -391,14 +399,25 @@
       questionState.wrong = new Set(saved?.wrong ?? []);
 
       cleanUpQuestionModal(modal);
-      generateAnswerChoiceUi(modal, choiceData)
+      generateAnswerChoiceUi(modal, choiceData);
     } finally {
       busy = false
     }
   }
 
+  async function handleModalChange() {
+    const modal = findQuestionModal();
+    if (!modal) return;
+
+    const loading = isModalLoading(modal)
+
+    if (loading && questionState.id == null) {
+      modal.root.classList.add("scb-hidden")
+    }
+  }
+
   function schedule() {
-    clearTimeout(scheduleTimer)
+    clearTimeout(scheduleTimer);
     scheduleTimer = setTimeout(mainLoop, 100);
   }
 
@@ -419,6 +438,15 @@
     }
   });
 
-  new MutationObserver(schedule).observe(document.body, { childList: true, subtree: true, characterData: true });
-  schedule()
+  new MutationObserver((mutationsList, observer) => {
+      schedule();
+      handleModalChange();
+  }).observe(
+    document.body,
+    {
+      childList: true,
+      subtree: true,
+      characterData: true
+    });
+  schedule();
 })();
