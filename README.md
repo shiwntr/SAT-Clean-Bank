@@ -27,7 +27,9 @@ chrome://extensions
 
 ## Notes
 + Currently only supports Chrome
++ Currently only supports Reading and Writing questions
 
 ## Planned features
 + Quickly view question state from table
++ Math support
 + Animations
