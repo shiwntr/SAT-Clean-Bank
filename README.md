@@ -20,6 +20,11 @@ chrome://extensions
 #### 4. Press load unpacked.
 #### 5. Select the newly cloned repo.
 
+## Screenshots
+
+![question](github-assets/question.png)
+![extension](github-assets/extension.png)
+
 ## Notes
 + Currently only supports Chrome
 
