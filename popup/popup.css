@@ -147,7 +147,7 @@ button:active {
 }
 
 .dropdown-toggle:active {
-    background-color: var(--scb-blue-tint2);
+    background-color: var(--scb-blue-tint3);
     border-color: var(--scb-blue);
 }
 
@@ -170,7 +170,7 @@ button:active {
 }
 
 .dropdown-item:active {
-    background-color: var(--scb-blue-tint2);
+    background-color: var(--scb-blue-tint3);
 }
 
 .dropdown-last-item {

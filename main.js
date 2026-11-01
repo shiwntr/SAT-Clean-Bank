@@ -8,7 +8,7 @@
   const store = { questions: {}, font: "default" };
   const questionState = { id: null, selected: null, solved: false, correctAnswer: null, wrong: new Set() };
   const choiceDataCache = new Map();
-  let lastSaved = "";
+  let spinnerOverlay = null;
   let busy = false;
   let scheduleTimer = null;
   let ignoreNextStorageChange = false;
@@ -81,7 +81,7 @@
     chrome.storage.local.set({ scb_questions: store.questions });
   }
 
-  // deal with popup/modal
+  // handle popup/modal
 
   function findQuestionModal() {
     const root = document.getElementById("question-modal")
@@ -133,10 +133,6 @@
     if (!modal.header || !modal.content || !modal.footer) return;
 
     document.documentElement.classList.add("scb-no-scroll");
-    modal.root.classList.remove("scb-hidden");
-    modal.content.classList.remove("scb-hidden");
-
-    modal.root.querySelector(".cb-modal-container").classList.add("scb-fullscreen-modal")
 
     modal.footer.classList.add("scb-remove-gap");
 
@@ -158,8 +154,6 @@
     if (!modal.footer.querySelector(".scb-next-and-back")) {
       const nextButton = modal.footer.querySelector(".cb-align-right .cb-btn");
       const backButton = modal.footer.querySelector(".left-actions .cb-btn");
-      nextButton.addEventListener("click", () => { modal.content.classList.add("scb-hidden") });
-      backButton.addEventListener("click", () => { modal.content.classList.add("scb-hidden") });
       if (nextButton && backButton) {
         const nextAndBackContainer = document.createElement("div");
         nextAndBackContainer.classList.add("scb-next-and-back");
@@ -171,6 +165,31 @@
     }
 
     hideElement(modal.footer.querySelector(".pdf-btn")); // hide pdf button
+  }
+
+  function createLoadingScreen() {
+    const spinner = document.createElement("div");
+    spinner.classList.add("scb-spinner");
+    for (let i = 0; i < 5; i++) {
+      const segment = document.createElement("div");
+      segment.classList.add("scb-spinner-segment");
+      segment.style.setProperty("--index", i);
+      spinner.append(segment);
+    }
+    return spinner;
+  }
+
+  function showSpinner() {
+    if (spinnerOverlay) return;
+    spinnerOverlay = document.createElement("div");
+    spinnerOverlay.classList.add("scb-spinner-overlay");
+    spinnerOverlay.append(createLoadingScreen());
+    document.body.append(spinnerOverlay);
+  }
+
+  function hideSpinner() {
+    spinnerOverlay?.remove();
+    spinnerOverlay = null;
   }
 
   // answer choices
@@ -248,6 +267,21 @@
     return button;
   }
 
+  function showRationale(container, animate = true) {
+    container.classList.remove("scb-hidden");
+    if (!animate) {
+      container.classList.add("scb-rationale-animating", "scb-no-anim");
+      return;
+    }
+    void container.offsetWidth;
+    requestAnimationFrame(() => container.classList.add("scb-rationale-animating"));
+  }
+
+  function hideRationale(container) {
+    container.classList.remove("scb-rationale-animating", "scb-no-anim");
+    container.classList.add("scb-hidden");
+  }
+
   async function generateAnswerChoiceUi(modal, choiceData) {
     if (!modal.content) return;
 
@@ -316,6 +350,8 @@
     incorrectAnswersRationale.textContent  = choiceData.rationale.paragraphs[2].replace(/\s*(Choice\s+[A-D]\b)/g, "\n$1").trim();
     incorrectAnswersRationale.classList.add("scb-incorrect-answer-rationale");
 
+    [correctAnswer, correctAnswerRationale, incorrectAnswersRationale].forEach((element, i) => element.style.setProperty("--index", i));
+
     rationaleContainer.append(correctAnswer, correctAnswerRationale, incorrectAnswersRationale);
 
     container.append(checkAndResetContainer, rationaleContainer);
@@ -333,6 +369,7 @@
         questionState.selected = null;
         questionState.wrong.add(choice);
       } else {
+        showRationale(rationaleContainer);
         checkbutton.classList.add("scb-disable-interactions");
         button.classList.remove("scb-choice-selected");
         button.classList.add("scb-choice-correct", "scb-disable-interactions");
@@ -346,6 +383,7 @@
       saveQuestions();
     });
     resetButton.addEventListener("click", () => {
+      hideRationale(rationaleContainer);
       answerChoiceButtonss.forEach((button) => {
         button.classList.remove("scb-disable-interactions", "scb-choice-correct", "scb-choice-incorrect", "scb-choice-selected");
       });
@@ -358,12 +396,15 @@
     });
 
     if (questionState.solved) {
+      showRationale(rationaleContainer);
       checkbutton.classList.add("scb-disable-interactions");
       rationaleContainer.classList.remove("scb-hidden");
       answerChoiceButtonss.forEach((button) => {
         button.classList.add("scb-disable-interactions");
       });
     }
+
+    hideSpinner();
   }
 
   // main loop
@@ -384,8 +425,6 @@
 
       if (isModalLoading(modal)) return;
 
-      saveQuestions()
-
       let choiceData = choiceDataCache.get(id);
       if (!choiceData) {
         choiceData = await getChoiceData(modal);
@@ -402,6 +441,9 @@
 
       cleanUpQuestionModal(modal);
       generateAnswerChoiceUi(modal, choiceData);
+    } catch (err) {
+      console.error("error:", err);
+      hideSpinner();
     } finally {
       busy = false
     }
@@ -411,14 +453,15 @@
     const modal = findQuestionModal();
     if (!modal) {
       document.documentElement.classList.remove("scb-no-scroll");
+      if (spinnerOverlay) hideSpinner();
       return;
-    };
+    }
 
-    const loading = isModalLoading(modal)
+    const loading = isModalLoading(modal);
+    const id = getQuestionId(modal);
 
-    if (loading && questionState.id == null) {
-      document.documentElement.classList.add("scb-no-scroll");
-      modal.root.classList.add("scb-hidden")
+    if (loading || (id && id !== questionState.id)) {
+      showSpinner();
     }
   }
 
@@ -444,7 +487,7 @@
     }
   });
 
-  new MutationObserver((mutationsList, observer) => {
+  new MutationObserver((mutations) => {
       schedule();
       handleModalChange();
   }).observe(
