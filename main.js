@@ -131,6 +131,8 @@
   function cleanUpQuestionModal(modal) {
     if (!modal.header || !modal.content || !modal.footer) return;
 
+    modal.root.querySelector(".cb-modal-container").classList.add("scb-fullscreen-modal")
+
     modal.footer.classList.add("scb-remove-gap")
 
     const questionContent = modal.content.querySelector(".question-content");

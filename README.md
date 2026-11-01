@@ -25,5 +25,5 @@ chrome://extensions
 
 ## Planned features
 + Question statistics
++ Quickly view question state from table
 + Animations
-+ Fullscreen

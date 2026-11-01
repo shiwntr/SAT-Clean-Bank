@@ -14,6 +14,23 @@
     color: var(--scb-gray) !important;
 }
 
+/*modal*/
+
+.scb-fullscreen-modal {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    max-width: none !important;
+    max-height: none !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    transform: none !important;
+    display: flex;
+    flex-direction: column;
+    scrollbar-gutter: stable !important;
+}
+
 /*heading*/
 
 .scb-modal-heading {
@@ -23,10 +40,22 @@
     gap: 10px;
 }
 
+.scb-modal-heading h4 {
+    font-size: 16px;
+}
+
+.scb-modal-heading p {
+    font-size: 10px;
+}
+
 .scb-modal-heading h4,
 .scb-modal-heading p {
     margin: 0 !important;
     line-height: 1.2;
+}
+
+.cb-dialog-header {
+    padding: 8px 12px !important;
 }
 
 /*answer choices*/
@@ -48,7 +77,7 @@
     min-height: 40px;
     padding: 8px 12px;
     background-color: var(--scb-white);
-    border: 2px solid var(--scb-gray);
+    border: 1px solid var(--scb-gray);
     border-radius: 10px;
     text-align: left;
     overflow-wrap: anywhere;
@@ -188,12 +217,21 @@
 
 /*next and back buttons*/
 
+.footer {
+    padding: 8px 12px !important;
+}
+
 .scb-next-and-back {
     display: flex;
     grid-column: 1 / -1;
     justify-self: end;
     align-items: center;
     gap: 10px;
+}
+
+.scb-next-and-back .cb-btn {
+    font-size: 11px;
+    padding: 9px 20px;
 }
 
 /*fonts*/
