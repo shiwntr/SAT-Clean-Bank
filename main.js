@@ -169,11 +169,12 @@
 
   function createLoadingScreen() {
     const spinner = document.createElement("div");
+    const offset = Math.floor(Math.random() * 12);
     spinner.classList.add("scb-spinner");
     for (let i = 0; i < 5; i++) {
       const segment = document.createElement("div");
       segment.classList.add("scb-spinner-segment");
-      segment.style.setProperty("--index", i);
+      segment.style.setProperty("--index", i + offset);
       spinner.append(segment);
     }
     return spinner;
