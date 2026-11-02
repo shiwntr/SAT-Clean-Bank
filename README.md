@@ -32,6 +32,4 @@ chrome://extensions
 + Currently only supports Reading and Writing questions
 
 ## Planned features
-+ Quickly view question state from table
 + Math support
-+ Animations

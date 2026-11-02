@@ -1,12 +1,15 @@
 (() => {
-  const FONT_VALUES = ["default", "roboto", "arial"];
-  const FONT_NAMES = ["Default", "Roboto", "Arial"];
+  const FONT_OPTIONS = { "Default": "default", "Roboto": "roboto", "Arial": "arial" };
+  const HIDE_EXPORT_OPTIONS = { "True": 1, "False": 0 };
 
-  const store = { questions: {}, font: "default", date: new Date() };
+  const store = { questions: {}, font: "default", date: new Date(), hideExport: 1 };
 
   const views = document.getElementById("views");
   const settings = document.getElementById("settings")
   const content = document.getElementById("content")
+
+  const fontDropdown = document.getElementById("font-dropdown");
+  const hideExportDropdown = document.getElementById("hide-export-dropdown");
 
   const stats = document.getElementById("stats")
   const questionsAnsweredElement = stats.querySelector(".questions-answered")
@@ -79,14 +82,14 @@
     settingsOpen = !settingsOpen;
     showView(settingsOpen);
   });
-  const fontDropdown = document.getElementById("font-dropdown");
 
   // saved data
 
-  const saveReady = chrome.storage.local.get(["scb_questions", "scb_font", "scb_date"]).then((data) => {
+  const saveReady = chrome.storage.local.get(["scb_questions", "scb_font", "scb_date", "scb_hide_export"]).then((data) => {
     store.questions = data.scb_questions || {};
     store.font = data.scb_font || "default";
     store.date = data.scb_date ? new Date(data.scb_date) : new Date();
+    store.hideExport = data.scb_hide_export ?? 1;
   });
 
   document.getElementById("reset-btn").addEventListener("click", function () {
@@ -116,7 +119,8 @@
     chrome.storage.local.remove("scb_questions");
     chrome.storage.local.set({
       scb_font: "default",
-      scb_date: date.getTime()
+      scb_date: date.getTime(),
+      scb_hide_export: 1
     });
 
     store.questions = {};
@@ -128,6 +132,8 @@
 
     fontDropdown.querySelector(".dropdown-toggle").textContent = "Default";
     fontDropdown.dataset.value = "default"
+    hideExportDropdown.querySelector(".dropdown-toggle").textContent = "True";
+    hideExportDropdown.dataset.value = 1;
     resetButton.textContent = "Data reset";
     resetDataClicks = 0;
     clearTimeout(resetTimer);
@@ -135,11 +141,12 @@
   });
 
   document.getElementById("export-data").addEventListener("click", async () => {
-    const data = await chrome.storage.local.get(["scb_questions", "scb_font", "scb_date"]);
+    const data = await chrome.storage.local.get(["scb_questions", "scb_font", "scb_date", "scb_hide_export"]);
     const payload = {
       scb_questions: data.scb_questions ?? {},
       scb_font: data.scb_font ?? "default",
-      scb_date: data.scb_date
+      scb_date: data.scb_date,
+      scb_hide_export: data.scb_hide_export
     };
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
@@ -162,9 +169,12 @@
       if (typeof questions !== "object" || questions === null || Array.isArray(questions)) throw new Error("Bad file 2");
       store.questions = questions;
 
-      store.font = FONT_VALUES.includes(parsed.scb_font) ? parsed.scb_font : "default";
+      store.font = Object.values(FONT_OPTIONS).includes(parsed.scb_font) ? parsed.scb_font : "default";
+
       const importedDate = Number.isFinite(parsed.scb_date) ? new Date(parsed.scb_date) : null;
       store.date = importedDate ?? store.date;
+
+      store.hideExport = parsed.scb_hide_export === 0 ? 0 : 1;
 
       updateStats();
       updateCountdown();
@@ -173,12 +183,16 @@
       await chrome.storage.local.set({
         scb_questions: store.questions,
         scb_font: store.font,
-        scb_date: store.date.getTime()
+        scb_date: store.date.getTime(),
+        scb_hide_export: store.hideExport
       });
 
       fontDropdown.dataset.value = store.font;
-      const toggle = fontDropdown.querySelector(".dropdown-toggle");
-      if (toggle) toggle.textContent = FONT_NAMES[FONT_VALUES.indexOf(store.font)];
+      const fontToggle = fontDropdown.querySelector(".dropdown-toggle");
+      if (fontToggle) fontToggle.textContent = keyFor(Object.entries(FONT_OPTIONS), store.font);
+      hideExportDropdown.dataset.value = store.font;
+      const hideExportToggle = hideExportDropdown.querySelector(".dropdown-toggle");
+      if (hideExportToggle) hideExportToggle.textContent = keyFor(Object.entries(HIDE_EXPORT_OPTIONS), store.hideExport);
 
       importButton.textContent = "Imported";
     } catch (err) {
@@ -413,7 +427,11 @@
     const statsData = getStats();
     questionsAnsweredCounter.set(statsData.answered);
 
-    firstAttemptCounter.set((statsData.answeredFirst / statsData.total) * 100);
+    if (statsData.total > 0) {
+      firstAttemptCounter.set((statsData.answeredFirst / statsData.total) * 100);
+    } else {
+      firstAttemptCounter.set(0);
+    }
 
     questionStateBar.setValue("First Attempt", statsData.answeredFirst);
     questionStateBar.setValue("Retried", statsData.answeredMiddle);
@@ -443,17 +461,9 @@
   async function start() {
     await saveReady;
 
-    makeDropdownMenu(
-      fontDropdown,
-      "Font",
-      {
-        "Default": "default",
-        "Roboto": "roboto",
-        "Arial": "arial",
-      },
-      store.font,
-      "scb_font"
-    );
+    makeDropdownMenu(fontDropdown, "Font", FONT_OPTIONS, store.font, "scb_font");
+    console.log(typeof(store.hideExport), store.hideExport)
+    makeDropdownMenu(hideExportDropdown, "Hide Export Options", HIDE_EXPORT_OPTIONS, store.hideExport, "scb_hide_export");
 
     showView(settingsOpen);
     updateStats();

@@ -5,7 +5,7 @@
     arial: 'Arial, sans-serif',
   };
 
-  const store = { questions: {}, font: "default" };
+  const store = { questions: {}, font: "default", hideExport: 1 };
   const questionState = { id: null, selected: null, solved: false, correctAnswer: null, wrong: new Set() };
   const choiceDataCache = new Map();
   let spinnerOverlay = null;
@@ -64,9 +64,10 @@
 
   // saved data
 
-  const saveReady = chrome.storage.local.get(["scb_questions", "scb_font"]).then((data) => {
+  const saveReady = chrome.storage.local.get(["scb_questions", "scb_font", "scb_hide_export"]).then((data) => {
     store.questions = data.scb_questions || {};
     store.font = data.scb_font || "default";
+    store.hideExport = data.scb_hide_export ?? 1;
     applyFont();
   });
 
@@ -169,14 +170,18 @@
 
   function createLoadingScreen() {
     const spinner = document.createElement("div");
-    const offset = Math.floor(Math.random() * 12);
     spinner.classList.add("scb-spinner");
+
+    const offset = Math.floor(Math.random() * 6);
+
     for (let i = 0; i < 5; i++) {
       const segment = document.createElement("div");
       segment.classList.add("scb-spinner-segment");
       segment.style.setProperty("--index", i + offset);
+
       spinner.append(segment);
     }
+
     return spinner;
   }
 
@@ -185,6 +190,14 @@
     spinnerOverlay = document.createElement("div");
     spinnerOverlay.classList.add("scb-spinner-overlay");
     spinnerOverlay.append(createLoadingScreen());
+
+    ["click", "mousedown", "mouseup", "pointerdown", "pointerup", "touchstart"].forEach((type) => {
+      spinnerOverlay.addEventListener(type, (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+      });
+    });
+
     document.body.append(spinnerOverlay);
   }
 
@@ -281,6 +294,18 @@
   function hideRationale(container) {
     container.classList.remove("scb-rationale-animating", "scb-no-anim");
     container.classList.add("scb-hidden");
+  }
+
+  function scrollModalToTop(modal) {
+    const targets = [
+      modal.content,
+      modal.content.querySelector(".question-info"),
+      modal.content.querySelector(".answer-content"),
+      modal.root.querySelector(".cb-modal-container"),
+    ];
+    targets.forEach((element) => {
+      if (element) element.scrollTo({ top: 0, behavior: "instant" });
+    });
   }
 
   async function generateAnswerChoiceUi(modal, choiceData) {
@@ -405,7 +430,113 @@
       });
     }
 
+    scrollModalToTop(modal);
     hideSpinner();
+  }
+
+  // table editing
+
+  function getTable() {
+    const root = document.getElementById("questions-table");
+    if (!root) return null;
+    return {
+      root,
+      header: root.querySelector("thead")?.querySelector("tr"),
+      body: root.querySelector("tbody"),
+      rows: [...root.querySelectorAll("tbody tr")]
+    };
+  }
+
+  function getRowState(saved) {
+    if (!saved) return 0;
+    const wrong = saved.wrong?.length ?? 0;
+    if (!saved.solved) return 0;
+    if (wrong === 0) return 1;
+    if (wrong >= 3) return 3;
+    return 2;
+  }
+
+  function updateTable(table) {
+    if (!table.root || !table.header || !table.rows) return;
+
+    const headerId = table.header.querySelector(".id-column");
+    if (headerId && !table.header.querySelector(".scb-table-column")) {
+      const th = document.createElement("th");
+      th.textContent = "SCB";
+      th.classList.add("scb-table-column");
+      headerId.insertAdjacentElement("afterend", th);
+    }
+
+    const colors = ["--scb-light-gray", "--scb-green-tint1", "--scb-yellow-tint1", "--scb-red-tint1"];
+    const labels = ["Unsolved", "First Try", "Retried", "Last Try"];
+
+    table.rows.forEach((row) => {
+      const idCell = row.querySelector(".id-column");
+      if (!idCell) return;
+
+      const id = idCell.textContent.trim();
+      const state = getRowState(store.questions[id]);
+
+      let cell = row.querySelector(".scb-table-column");
+      if (!cell) {
+        cell = document.createElement("td");
+        cell.classList.add("scb-table-column");
+        idCell.insertAdjacentElement("afterend", cell);
+      }
+
+      if (cell.dataset.id === id && cell.dataset.state === String(state)) return;
+
+      cell.dataset.id = id;
+      cell.dataset.state = String(state);
+      cell.replaceChildren();
+
+      const background = document.createElement("div");
+      background.classList.add("scb-table-background");
+      background.style.setProperty("--color", `var(${colors[state]})`);
+      background.textContent = labels[state];
+
+      cell.append(background);
+    });
+  }
+
+  // base site
+
+  function updateHeroBand() {
+    const heroBand = document.querySelector(".eqb-hero-band");
+    if (!heroBand) return;
+
+    const h1 = heroBand.querySelector("h1");
+    if (h1 && h1.textContent == "SAT Clean Bank") return;
+    h1.textContent = "SAT Clean Bank";
+    h1.classList.add("scb-remove-margin")
+
+    const p = heroBand.querySelector("p");
+    if (p) p.remove();
+  }
+
+  function getExportElements() {
+    const elements = [
+      document.getElementById("export-button"),
+      document.querySelector(".question-table-toggle"),
+    ];
+
+    const table = getTable();
+    if (table) {
+      elements.push(table.header?.querySelector(".checked-column"));
+      table.rows.forEach((row) => elements.push(row.querySelector(".checked-column")));
+    }
+
+    return elements.filter(Boolean);
+  }
+
+  function updateExportElements() {
+    const hide = Number(store.hideExport) === 1;
+    getExportElements().forEach((element) => {
+      if (element.classList.contains("scb-hidden") !== hide) {
+        element.classList.toggle("scb-hidden", hide);
+      }
+    });
+    console.log("update")
   }
 
   // main loop
@@ -443,7 +574,7 @@
       cleanUpQuestionModal(modal);
       generateAnswerChoiceUi(modal, choiceData);
     } catch (err) {
-      console.error("error:", err);
+      console.error("[scb] mainloop:", err);
       hideSpinner();
     } finally {
       busy = false
@@ -451,6 +582,20 @@
   }
 
   async function handleModalChange() {
+    try {
+      updateHeroBand();
+    } catch (err) {
+      console.error("[scb] heroband:", err);
+    }
+
+    try {
+      const table = getTable();
+      if (table) updateTable(table);
+      if (questionState.id == null) updateExportElements();
+    } catch (err) {
+      console.error("[scb] table:", err);
+    }
+
     const modal = findQuestionModal();
     if (!modal) {
       document.documentElement.classList.remove("scb-no-scroll");
@@ -486,6 +631,12 @@
       questionState.id = null;
       schedule();
     }
+
+    if (changes.scb_hide_export) {
+      store.hideExport = changes.scb_hide_export.newValue
+      getExportElements();
+      updateExportElements();
+    }
   });
 
   new MutationObserver((mutations) => {
@@ -497,6 +648,7 @@
       childList: true,
       subtree: true,
       characterData: true
-    });
+    }
+  );
   schedule();
 })();
