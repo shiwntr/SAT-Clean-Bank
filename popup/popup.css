@@ -340,6 +340,24 @@ button:active {
     top: -0.05em;
 }
 
+#reset-btn {
+    font-size: 15px;
+    margin-bottom: 10px;
+    padding: 0px;
+    width: auto;
+    height: auto;
+    color: var(--scb-red);
+    background-color: transparent;
+}
+
+#reset-btn:hover {
+    color: var(--scb-red-shade1);
+}
+
+#reset-btn:active {
+    color: var(--scb-red-shade2);
+}
+
 .questions-answered-counter-name {
     margin-bottom: 0px;
 }

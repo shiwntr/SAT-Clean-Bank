@@ -6,7 +6,7 @@
   };
 
   const store = { questions: {}, font: "default", hideExport: 1 };
-  const questionState = { id: null, selected: null, solved: false, correctAnswer: null, wrong: new Set() };
+  const questionState = { id: null, isMultipleChoice: true, subject: null, selected: null, solved: false, correctAnswer: null, showedRationale: false, wrong: new Set() };
   const choiceDataCache = new Map();
   let spinnerOverlay = null;
   let busy = false;
@@ -74,8 +74,10 @@
   function saveQuestions() {
     if (!questionState.id) return;
     store.questions[questionState.id] = {
+      isMultipleChoice: questionState.isMultipleChoice,
       wrong: Array.from(questionState.wrong),
       solved: questionState.solved,
+      showedRationale: questionState.showedRationale,
       ts: Date.now()
     };
     ignoreNextStorageChange = true;
@@ -140,11 +142,12 @@
     const questionContent = modal.content.querySelector(".question-content");
     const answerContent = modal.content.querySelector(".answer-content");
 
+    questionState.subject = questionContent.querySelector(".text")?.textContent;
+
     generateHeading(modal);
 
     hideElement(questionContent.querySelector("h5")); // difficulty
     questionContent.querySelector(".prompt")?.classList.remove("cb-margin-bottom-16"); // question text
-    hideElement(questionContent.querySelector(".question")); // actual question
 
     hideElement(answerContent.querySelector("h5")); // "answer" text
 
@@ -235,7 +238,8 @@
     const div = await waitFor(() => modal.root.querySelector(".rationale"));
     const paragraphs = div ? [...div.querySelectorAll("p")].map((p) => p.textContent.trim()) : null;
     if (!paragraphs) return null;
-    const correctAnswer = paragraphs ? paragraphs[0].replace(/^Correct Answer:\s*/i, "").trim() : null;
+    let correctAnswer = paragraphs ? paragraphs[0].replace(/^Correct Answer:\s*/i, "").trim() : null;
+    if (correctAnswer.includes(",")) correctAnswer = correctAnswer.split(",").map((answer) => typeof answer == "string" ? answer.trim() : answer);
     if (checkbox.checked) checkbox.click();
 
     return { correctAnswer, paragraphs };
@@ -252,7 +256,7 @@
     const choices = getChoices(modal);
     const rationale = await getRationale(modal);
     const question = getQuestion(modal);
-    return { choices, rationale, question };
+    return { choices, rationale, question, isMultipleChoice: !!(choices && choices.length > 0) };
   }
 
   function generateAnswerChoiceElement(index, text) {
@@ -279,6 +283,17 @@
     }
 
     return button;
+  }
+
+  function generateAnswerFieldElement() {
+    const element = document.createElement("input");
+    element.type = "text";
+    element.classList.add("scb-answer-field");
+    if (questionState.solved) {
+      element.value = Array.isArray(questionState.correctAnswer) ? questionState.correctAnswer.join(", ") : questionState.correctAnswer;
+      element.classList.add("scb-choice-correct");
+    }
+    return element;
   }
 
   function showRationale(container, animate = true) {
@@ -321,24 +336,28 @@
 
     // quesiton
 
-    const question = document.createElement("h5")
-    question.textContent = choiceData.question
-    question.classList.add("scb-question")
-    container.append(question)
+    if (questionState.subject == "Reading and Writing") {
+      hideElement(modal.content.querySelector(".question"));
+      const question = document.createElement("h5");
+      question.textContent = choiceData.question;
+      question.classList.add("scb-question");
+      container.append(question);
+    }
 
     // choices
 
-    const answerChoiceButtonss = [];
-    choiceData.choices.forEach((text, i) => {
-      const element = generateAnswerChoiceElement(i, text);
-      answerChoiceButtonss.push(element);
-      container.append(element);
-    });
-    answerChoiceButtonss.forEach((button) => {
+    const answerChoiceInputss = [];
+    if (questionState.isMultipleChoice) {
+      choiceData.choices.forEach((text, i) => {
+        const element = generateAnswerChoiceElement(i, text);
+        answerChoiceInputss.push(element);
+        container.append(element);
+      });
+      answerChoiceInputss.forEach((button) => {
       button.addEventListener("click", () => {
         if (questionState.solved) return;
 
-        answerChoiceButtonss.forEach((btn) => {
+        answerChoiceInputss.forEach((btn) => {
           btn.classList.remove("scb-choice-selected");
         });
 
@@ -346,11 +365,17 @@
         questionState.selected = button;
       });
     });
+    } else {
+      const element = generateAnswerFieldElement();
+      answerChoiceInputss.push(element);
+      container.append(element);
+      questionState.selected = element;
+    }
 
     // check and reset
 
-    const checkAndResetContainer = document.createElement("div");
-    checkAndResetContainer.classList.add("scb-check-and-reset");
+    const checkResetShowRationaleContainer = document.createElement("div");
+    checkResetShowRationaleContainer.classList.add("scb-check-reset-show-rationale");
 
     const checkbutton = document.createElement("button");
     checkbutton.textContent = "Check";
@@ -358,8 +383,15 @@
     const resetButton = document.createElement("button");
     resetButton.textContent = "Reset question";
     resetButton.classList.add("scb-reset-button");
+    let showRationaleButton = null;
+    if (!questionState.isMultipleChoice) {
+      showRationaleButton = document.createElement("button");
+      showRationaleButton.textContent = "Show Rationale";
+      showRationaleButton.classList.add("scb-reset-button");
+    }
 
-    checkAndResetContainer.append(checkbutton, resetButton);
+    checkResetShowRationaleContainer.append(checkbutton, resetButton);
+    if (showRationaleButton) checkResetShowRationaleContainer.append(showRationaleButton);
 
     // rationale
 
@@ -372,61 +404,98 @@
     const correctAnswerRationale = document.createElement("p");
     correctAnswerRationale.textContent = choiceData.rationale.paragraphs[1];
     correctAnswerRationale.classList.add("scb-correct-answer-rationale");
-    const incorrectAnswersRationale = document.createElement("p");
-    incorrectAnswersRationale.textContent  = choiceData.rationale.paragraphs[2].replace(/\s*(Choice\s+[A-D]\b)/g, "\n$1").trim();
-    incorrectAnswersRationale.classList.add("scb-incorrect-answer-rationale");
+    const incorrectAnswersRationale = document.createElement("p")
+    if (questionState.isMultipleChoice) {
+      incorrectAnswersRationale.textContent = choiceData.rationale.paragraphs[2].replace(/\s*(Choice\s+[A-D]\b)/g, "\n$1").trim();
+      incorrectAnswersRationale.classList.add("scb-incorrect-answer-rationale");
+    }
 
     [correctAnswer, correctAnswerRationale, incorrectAnswersRationale].forEach((element, i) => element.style.setProperty("--index", i));
 
     rationaleContainer.append(correctAnswer, correctAnswerRationale, incorrectAnswersRationale);
 
-    container.append(checkAndResetContainer, rationaleContainer);
+    container.append(checkResetShowRationaleContainer, rationaleContainer);
 
     checkbutton.addEventListener("click", () => {
       if (questionState.solved) return;
       if (!questionState.selected) return;
 
-      const button = questionState.selected;
-      const choice = button.dataset.answerChoice;
+      const input = questionState.selected;
 
-      if (choice !== choiceData.rationale.correctAnswer) {
-        button.classList.remove("scb-choice-selected");
-        button.classList.add("scb-choice-incorrect", "scb-disable-interactions");
-        questionState.selected = null;
-        questionState.wrong.add(choice);
+      let answer = null;
+      if (questionState.isMultipleChoice) {
+        answer = input.dataset.answerChoice;
+      } else {
+        answer = input.value;
+      }
+
+      const correct = Array.isArray(questionState.correctAnswer) ? questionState.correctAnswer.includes(answer) : answer == questionState.correctAnswer
+
+      if (!correct) {
+        console.log(answer, questionState.correctAnswer)
+        input.classList.remove("scb-choice-selected");
+        input.classList.add("scb-choice-incorrect", "scb-disable-interactions");
+        if (questionState.isMultipleChoice) {
+          questionState.selected = null;
+          questionState.wrong.add(answer);
+        }
       } else {
         showRationale(rationaleContainer);
         checkbutton.classList.add("scb-disable-interactions");
-        button.classList.remove("scb-choice-selected");
-        button.classList.add("scb-choice-correct", "scb-disable-interactions");
-        answerChoiceButtonss.forEach((button) => {
-          button.classList.add("scb-disable-interactions");
+        if (showRationaleButton) showRationaleButton.classList.add("scb-disable-interactions");
+        input.classList.remove("scb-choice-selected");
+        input.classList.add("scb-choice-correct");
+        answerChoiceInputss.forEach((input) => {
+          input.classList.add("scb-disable-interactions");
         });
         rationaleContainer.classList.remove("scb-hidden");
-        questionState.selected = null;
+        if (questionState.isMultipleChoice) { questionState.selected = null; }
         questionState.solved = true;
       }
       saveQuestions();
     });
     resetButton.addEventListener("click", () => {
       hideRationale(rationaleContainer);
-      answerChoiceButtonss.forEach((button) => {
-        button.classList.remove("scb-disable-interactions", "scb-choice-correct", "scb-choice-incorrect", "scb-choice-selected");
+      answerChoiceInputss.forEach((input) => {
+        input.classList.remove("scb-disable-interactions", "scb-choice-correct", "scb-choice-incorrect", "scb-choice-selected");
       });
       checkbutton.classList.remove("scb-disable-interactions");
+      if (showRationaleButton) showRationaleButton.classList.remove("scb-disable-interactions");
       rationaleContainer.classList.add("scb-hidden");
-      questionState.selected = null;
+      if (questionState.isMultipleChoice) { questionState.selected = null; }
       questionState.solved = false;
       questionState.wrong = new Set();
+      questionState.showedRationale = false;
+      saveQuestions();
+    });
+    if (showRationaleButton) showRationaleButton.addEventListener("click", () => {
+      showRationale(rationaleContainer);
+
+      const input = questionState.selected;
+
+      checkbutton.classList.add("scb-disable-interactions");
+      showRationaleButton.classList.add("scb-disable-interactions");
+      input.classList.remove("scb-choice-selected");
+      input.classList.add("scb-choice-correct");
+      answerChoiceInputss.forEach((input) => {
+        input.classList.add("scb-disable-interactions");
+      });
+      rationaleContainer.classList.remove("scb-hidden");
+      const shownAnswer = Array.isArray(questionState.correctAnswer) ? questionState.correctAnswer.join(", ") : questionState.correctAnswer;
+      input.value = shownAnswer;
+      questionState.solved = true;
+      questionState.showedRationale = true;
+
       saveQuestions();
     });
 
     if (questionState.solved) {
       showRationale(rationaleContainer);
       checkbutton.classList.add("scb-disable-interactions");
+      if (showRationaleButton) showRationaleButton.classList.add("scb-disable-interactions");
       rationaleContainer.classList.remove("scb-hidden");
-      answerChoiceButtonss.forEach((button) => {
-        button.classList.add("scb-disable-interactions");
+      answerChoiceInputss.forEach((input) => {
+        input.classList.add("scb-disable-interactions");
       });
     }
 
@@ -449,6 +518,8 @@
 
   function getRowState(saved) {
     if (!saved) return 0;
+    if (saved.showedRationale) return 5;
+    if (!saved.isMultipleChoice) return 4;
     const wrong = saved.wrong?.length ?? 0;
     if (!saved.solved) return 0;
     if (wrong === 0) return 1;
@@ -467,8 +538,8 @@
       headerId.insertAdjacentElement("afterend", th);
     }
 
-    const colors = ["--scb-light-gray", "--scb-green-tint1", "--scb-yellow-tint1", "--scb-red-tint1"];
-    const labels = ["Unsolved", "First Try", "Retried", "Last Try"];
+    const colors = ["--scb-light-gray", "--scb-green-tint1", "--scb-yellow-tint1", "--scb-red-tint1", "--scb-green-tint1", "--scb-red-tint1"];
+    const labels = ["Unsolved", "First Try", "Retried", "Last Try", "Solved", "Rationale"];
 
     table.rows.forEach((row) => {
       const idCell = row.querySelector(".id-column");
@@ -566,6 +637,7 @@
       const saved = store.questions[id];
 
       questionState.id = id;
+      questionState.isMultipleChoice = choiceData.isMultipleChoice;
       questionState.selected = null;
       questionState.solved = saved?.solved ?? false;
       questionState.correctAnswer = choiceData.rationale.correctAnswer
@@ -630,6 +702,7 @@
       store.questions = changes.scb_questions.newValue ?? {};
       questionState.id = null;
       schedule();
+      handleModalChange();
     }
 
     if (changes.scb_hide_export) {

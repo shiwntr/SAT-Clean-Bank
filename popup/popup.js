@@ -26,10 +26,13 @@
   const testingDayElement = document.getElementById("testing-day")
   const calendar = document.getElementById("calendar")
 
-  const resetButton = document.getElementById("reset-btn");
+  const resetQuestionDataButton = document.getElementById("reset-question-data-btn");
+  const resetDataButton = document.getElementById("reset-btn");
   const importButton = document.getElementById("import-data");
   const importFile = document.getElementById("import-file");
-  let resetTimer = null;
+  let resetQuestionDataTimer = null;
+  let resetDataTimer = null;
+  let resetQuestionDataClicks = 0;
   let resetDataClicks = 0;
 
   // settings
@@ -92,24 +95,55 @@
     store.hideExport = data.scb_hide_export ?? 1;
   });
 
-  document.getElementById("reset-btn").addEventListener("click", function () {
+  resetQuestionDataButton.addEventListener("click", () => {
+    if (resetQuestionDataClicks === 0) {
+      resetQuestionDataClicks = 1;
+      resetQuestionDataButton.textContent = "Are you sure?";
+      clearTimeout(resetQuestionDataTimer);
+      resetQuestionDataTimer = setTimeout(() => {
+        resetQuestionDataClicks = 0;
+        resetQuestionDataButton.textContent = "Reset Quesion Data";
+      }, 3000);
+      return;
+    }
+    if (resetQuestionDataClicks === 1) {
+      resetQuestionDataClicks = 2;
+      resetQuestionDataButton.textContent = "ARE YOU REALLY SURE?";
+      clearTimeout(resetQuestionDataTimer);
+      resetQuestionDataTimer = setTimeout(() => {
+        resetQuestionDataClicks = 0;
+        resetQuestionDataButton.textContent = "Reset Quesion Data";
+      }, 3000);
+      return;
+    }
+
+    chrome.storage.local.remove("scb_questions");
+    store.questions = {};
+    updateStats();
+
+    resetQuestionDataButton.textContent = "Data reset";
+    resetQuestionDataClicks = 0;
+    clearTimeout(resetDataTimer);
+    setTimeout(() => { resetQuestionDataButton.textContent = "Reset Quesion Data"; }, 3000);
+  });
+  resetDataButton.addEventListener("click", () => {
     if (resetDataClicks === 0) {
       resetDataClicks = 1;
-      resetButton.textContent = "Are you sure?";
-      clearTimeout(resetTimer);
-      resetTimer = setTimeout(() => {
+      resetDataButton.textContent = "Are you sure?";
+      clearTimeout(resetDataTimer);
+      resetDataTimer = setTimeout(() => {
         resetDataClicks = 0;
-        resetButton.textContent = "Reset Data";
+        resetDataButton.textContent = "Reset Data";
       }, 3000);
       return;
     }
     if (resetDataClicks === 1) {
       resetDataClicks = 2;
-      resetButton.textContent = "ARE YOU REALLY SURE?";
-      clearTimeout(resetTimer);
-      resetTimer = setTimeout(() => {
+      resetDataButton.textContent = "ARE YOU REALLY SURE?";
+      clearTimeout(resetDataTimer);
+      resetDataTimer = setTimeout(() => {
         resetDataClicks = 0;
-        resetButton.textContent = "Reset Data";
+        resetDataButton.textContent = "Reset Data";
       }, 3000);
       return;
     }
@@ -134,10 +168,10 @@
     fontDropdown.dataset.value = "default"
     hideExportDropdown.querySelector(".dropdown-toggle").textContent = "True";
     hideExportDropdown.dataset.value = 1;
-    resetButton.textContent = "Data reset";
+    resetDataButton.textContent = "Data reset";
     resetDataClicks = 0;
-    clearTimeout(resetTimer);
-    setTimeout(() => { resetButton.textContent = "Reset Data"; }, 3000);
+    clearTimeout(resetDataTimer);
+    setTimeout(() => { resetDataButton.textContent = "Reset Data"; }, 3000);
   });
 
   document.getElementById("export-data").addEventListener("click", async () => {
@@ -406,14 +440,18 @@
       stats.total++;
       if (question.solved) {
         stats.answered++;
+        if (question.showedRationale) {
+          stats.answeredLast++;
+          return;
+        }
         const wrongCount = question.wrong?.length ?? 0;
         if (wrongCount == 0) {
           stats.answeredFirst++;
-          return
+          return;
         }
         if (wrongCount >= 3) {
           stats.answeredLast++;
-          return
+          return;
         }
         stats.answeredMiddle++;
       } else {

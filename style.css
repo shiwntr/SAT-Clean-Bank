@@ -122,6 +122,12 @@ html.scb-no-scroll body {
     text-align: center;
 }
 
+td.id-column {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 /*heading*/
 
 .scb-modal-heading {
@@ -206,16 +212,6 @@ html.scb-no-scroll body {
     border-color: var(--scb-blue-shade1);
 }
 
-.scb-choice-correct {
-    background-color: var(--scb-green-tint1);
-    border-color: var(--scb-green);
-}
-
-.scb-choice-incorrect {
-    background-color: var(--scb-red-tint3);
-    border-color: var(--scb-red);
-}
-
 .scb-choice-selected .scb-choice-letter {
     background-color: var(--scb-blue);
     border-color: var(--scb-blue);
@@ -258,13 +254,55 @@ html.scb-no-scroll body {
     color: var(--scb-gray);
 }
 
+/*answer fields*/
+
+.scb-answer-field {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    height: auto;
+    min-height: 40px;
+    padding: 8px 12px;
+    background-color: var(--scb-white);
+    border: 1px solid var(--scb-gray);
+    border-radius: 10px;
+    text-align: left;
+    overflow-wrap: anywhere;
+    white-space: normal;
+    transition: background-color 0.15s, border-color 0.15s;
+}
+
+.scb-answer-field:hover {
+    background-color: var(--scb-lighter-gray);
+    border-color: var(--scb-black);
+}
+
+.scb-answer-field:focus {
+    background-color: var(--scb-white);
+}
+
+.scb-choice-correct {
+    background-color: var(--scb-green-tint1);
+    border-color: var(--scb-green);
+}
+
+.scb-choice-incorrect {
+    background-color: var(--scb-red-tint3);
+    border-color: var(--scb-red);
+}
+
 /*check and reset section*/
 
-.scb-choice-button + .scb-check-and-reset {
+.scb-choice-button + .scb-check-reset-show-rationale {
     margin-top: 15px;
 }
 
-.scb-check-and-reset {
+.scb-answer-field + .scb-check-reset-show-rationale {
+    margin-top: 15px;
+}
+
+.scb-check-reset-show-rationale {
     height: 40px;
     display: flex;
     align-items: center;
@@ -309,7 +347,7 @@ html.scb-no-scroll body {
 
 /*rationale*/
 
-.scb-check-and-reset + .scb-rationale {
+.scb-check-reset-show-rationale + .scb-rationale {
     margin-top: 15px;
 }
 

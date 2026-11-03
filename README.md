@@ -46,7 +46,6 @@ chrome://extensions
 
 ## Notes
 + Currently only supports Chrome
-+ Currently only supports Reading and Writing questions
 
 ## Planned features
-+ Math support
++ no more
