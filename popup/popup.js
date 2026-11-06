@@ -123,7 +123,7 @@
 
     resetQuestionDataButton.textContent = "Data reset";
     resetQuestionDataClicks = 0;
-    clearTimeout(resetDataTimer);
+    clearTimeout(resetQuestionDataTimer);
     setTimeout(() => { resetQuestionDataButton.textContent = "Reset Quesion Data"; }, 3000);
   });
   resetDataButton.addEventListener("click", () => {
@@ -224,7 +224,7 @@
       fontDropdown.dataset.value = store.font;
       const fontToggle = fontDropdown.querySelector(".dropdown-toggle");
       if (fontToggle) fontToggle.textContent = keyFor(Object.entries(FONT_OPTIONS), store.font);
-      hideExportDropdown.dataset.value = store.font;
+      hideExportDropdown.dataset.value = store.hideExport;
       const hideExportToggle = hideExportDropdown.querySelector(".dropdown-toggle");
       if (hideExportToggle) hideExportToggle.textContent = keyFor(Object.entries(HIDE_EXPORT_OPTIONS), store.hideExport);
 
@@ -500,7 +500,6 @@
     await saveReady;
 
     makeDropdownMenu(fontDropdown, "Font", FONT_OPTIONS, store.font, "scb_font");
-    console.log(typeof(store.hideExport), store.hideExport)
     makeDropdownMenu(hideExportDropdown, "Hide Export Options", HIDE_EXPORT_OPTIONS, store.hideExport, "scb_hide_export");
 
     showView(settingsOpen);
