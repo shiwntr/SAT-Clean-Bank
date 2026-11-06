@@ -3,15 +3,13 @@
 # SAT-Clean-Bank
 Chrome extension for Collegeboard's SAT Question Bank.
 
-**Currently still in development**.
-
-Planned release before 11/7/26.
-
 # Installation
 
 ## 1. Download the extension
 
 ### Option 1. Download latest release and unzip it. (v1.0.0)
+
+![scb-zip](github-assets/scb-zip.png)
 
 ### Option 2. Clone the repo
 3. 
@@ -19,21 +17,23 @@ Planned release before 11/7/26.
 git clone "https://github.com/shiwntr/SAT-Clean-Bank.git"
 ```
 
-### Option 3. Or download the repo zip and extract it.
+### Option 3. Or download the repo zip and extract it
 
 ## 2. Go to chrome extensions
 
 chrome://extensions
 
-## 3. Enable developer mode if not enabled already.
+## 3. Enable developer mode if not enabled already
 
 ![devloper-mode](github-assets/devloper-mode.png)
 
-## 4. Press load unpacked.
+## 4. Press load unpacked
 
 ![load-unpacked](github-assets/load-unpacked.png)
 
-## 5. Select the folder.
+## 5. Select the folder
+
+![scb-file](github-assets/scb-file.png)
 
 # Features
 + Replaces the default question layout with a custom UI.
