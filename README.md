@@ -12,7 +12,7 @@ Chrome extension for Collegeboard's SAT Question Bank.
 ![scb-zip](github-assets/scb-zip.png)
 
 ### Option 2. Clone the repo
-3. 
+
 ```bash
 git clone "https://github.com/shiwntr/SAT-Clean-Bank.git"
 ```
